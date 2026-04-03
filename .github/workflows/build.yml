@@ -139,15 +139,18 @@ jobs:
           for dir in artifacts/libdmdutil-python-*/; do
             base="$(basename "${dir%/}")"
             triplet="${base#libdmdutil-python-}"
+            rm -rf package-root
+            mkdir -p package-root/libdmdutil-python
+            cp -a "${dir}"/. package-root/libdmdutil-python/
             if [[ "${triplet}" == win-* ]]; then
               (
-                cd "${dir}"
-                zip -r "../../libdmdutil-python-${TAG}-${triplet}.zip" libdmdutil-python
+                cd package-root
+                zip -r "../libdmdutil-python-${TAG}-${triplet}.zip" libdmdutil-python
               )
             else
               (
-                cd "${dir}"
-                tar -czf "../../libdmdutil-python-${TAG}-${triplet}.tar.gz" libdmdutil-python
+                cd package-root
+                tar -czf "../libdmdutil-python-${TAG}-${triplet}.tar.gz" libdmdutil-python
               )
             fi
           done
