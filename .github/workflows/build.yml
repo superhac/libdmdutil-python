@@ -108,10 +108,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            dist/libdmdutil-python
-            dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
-            dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          path: dist/libdmdutil-python
 
       - name: Publish release assets
         if: startsWith(github.ref, 'refs/tags/v')
