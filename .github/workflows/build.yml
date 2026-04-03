@@ -1,0 +1,125 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            os: ubuntu-latest
+            platform: linux
+            arch: x64
+            wrapper_lib: libdmdutil_python_bridge.so
+          - name: Linux arm64
+            os: ubuntu-24.04-arm
+            platform: linux
+            arch: aarch64
+            wrapper_lib: libdmdutil_python_bridge.so
+          - name: macOS x64
+            os: macos-13
+            platform: macos
+            arch: x64
+            wrapper_lib: libdmdutil_python_bridge.dylib
+          - name: macOS arm64
+            os: macos-latest
+            platform: macos
+            arch: arm64
+            wrapper_lib: libdmdutil_python_bridge.dylib
+          - name: Windows x64
+            os: windows-latest
+            platform: win
+            arch: x64
+            wrapper_lib: libdmdutil_python_bridge.dll
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool cmake build-essential libusb-1.0-0-dev libudev-dev curl
+
+      - name: Install build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install autoconf automake libtool cmake curl
+
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install MSYS2 packages (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm --needed make diffutils cmake"
+          /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-libwinpthread mingw-w64-x86_64-cmake"
+
+      - name: Fetch latest libdmdutil release
+        shell: bash
+        run: ./fetch_libdmdutil.sh
+
+      - name: Build libdmdutil
+        shell: bash
+        run: ./build_libdmdutil.sh libdmdutil libdmdutil/build
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+
+      - name: Build wrapper
+        shell: bash
+        run: ./build_wrapper.sh libdmdutil libdmdutil/build .
+        env:
+          PLATFORM: ${{ matrix.platform }}
+
+      - name: Stage runtime
+        shell: bash
+        run: ./stage_runtime.sh libdmdutil libdmdutil/build dist/libdmdutil-python
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+
+      - name: Create archive (Linux / macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd dist
+          tar -czf libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz libdmdutil-python
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd dist
+          powershell -Command "Compress-Archive -Path libdmdutil-python -DestinationPath libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/libdmdutil-python
+            dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+            dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.zip
+
+      - name: Publish release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+            dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.zip
