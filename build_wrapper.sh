@@ -65,12 +65,36 @@ case "${PLATFORM}" in
       BRIDGE_SRC_WIN="native\\dmdutil_bridge.cpp"
     fi
 
+    IMPORT_LIB=""
+    for candidate in \
+      "${LIBDMDUTIL_BUILD}/Release/dmdutil64.lib" \
+      "${LIBDMDUTIL_BUILD}/Release/dmdutil.lib" \
+      "${LIBDMDUTIL_BUILD}/src/Release/dmdutil64.lib" \
+      "${LIBDMDUTIL_BUILD}/src/Release/dmdutil.lib"
+    do
+      if [[ -f "${candidate}" ]]; then
+        IMPORT_LIB="${candidate}"
+        break
+      fi
+    done
+
+    if [[ -z "${IMPORT_LIB}" ]]; then
+      echo "ERROR: Could not find libdmdutil import library under ${LIBDMDUTIL_BUILD}" >&2
+      exit 1
+    fi
+
+    if command -v cygpath >/dev/null 2>&1; then
+      IMPORT_LIB_WIN="$(cygpath -w "${IMPORT_LIB}")"
+    else
+      IMPORT_LIB_WIN="${IMPORT_LIB}"
+    fi
+
     export MSYS2_ARG_CONV_EXCL='*'
     cl.exe /LD /std:c++20 /EHsc /O2 \
       "/Fe:${OUTPUT_WIN}\\libdmdutil_python_bridge.dll" \
       "${BRIDGE_SRC_WIN}" \
       "/I${SRC_WIN}\\include" \
-      "${BUILD_WIN}\\Release\\dmdutil.lib"
+      "${IMPORT_LIB_WIN}"
     ;;
 esac
 

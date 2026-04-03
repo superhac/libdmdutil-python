@@ -90,6 +90,13 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           ARCH: ${{ matrix.arch }}
 
+      - name: Prepare upload directory
+        shell: bash
+        run: |
+          rm -rf artifact
+          mkdir -p artifact
+          cp -a dist/libdmdutil-python artifact/libdmdutil-python
+
       - name: Create archive (Linux / macOS)
         if: runner.os != 'Windows'
         shell: bash
@@ -108,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}
-          path: dist/libdmdutil-python
+          path: artifact
 
       - name: Publish release assets
         if: startsWith(github.ref, 'refs/tags/v')
