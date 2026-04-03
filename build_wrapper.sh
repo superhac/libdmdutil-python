@@ -53,11 +53,24 @@ case "${PLATFORM}" in
       -Wl,-rpath,@loader_path
     ;;
   win)
+    if command -v cygpath >/dev/null 2>&1; then
+      OUTPUT_WIN="$(cygpath -w "${OUTPUT_DIR}")"
+      SRC_WIN="$(cygpath -w "${LIBDMDUTIL_SRC}")"
+      BUILD_WIN="$(cygpath -w "${LIBDMDUTIL_BUILD}")"
+      BRIDGE_SRC_WIN="$(cygpath -w "native/dmdutil_bridge.cpp")"
+    else
+      OUTPUT_WIN="${OUTPUT_DIR}"
+      SRC_WIN="${LIBDMDUTIL_SRC}"
+      BUILD_WIN="${LIBDMDUTIL_BUILD}"
+      BRIDGE_SRC_WIN="native\\dmdutil_bridge.cpp"
+    fi
+
+    export MSYS2_ARG_CONV_EXCL='*'
     cl.exe /LD /std:c++20 /EHsc /O2 \
-      /Fe:"${OUTPUT_DIR}/libdmdutil_python_bridge.dll" \
-      native\\dmdutil_bridge.cpp \
-      /I "${LIBDMDUTIL_SRC}\\include" \
-      "${LIBDMDUTIL_BUILD}\\Release\\dmdutil.lib"
+      "/Fe:${OUTPUT_WIN}\\libdmdutil_python_bridge.dll" \
+      "${BRIDGE_SRC_WIN}" \
+      "/I${SRC_WIN}\\include" \
+      "${BUILD_WIN}\\Release\\dmdutil.lib"
     ;;
 esac
 
