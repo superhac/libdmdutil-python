@@ -61,7 +61,7 @@ class DMDController:
             return self._info
 
     def unload(self) -> None:
-        self.stop_image(clear=False)
+        self.stop(clear=False)
         with self._lock:
             if self._connection is not None:
                 self._connection.close()
@@ -73,7 +73,7 @@ class DMDController:
         return self.load()
 
     def hold_image(self, path: str, *, fit_mode: str = "stretch") -> None:
-        self.stop_image(clear=False)
+        self.stop(clear=False)
         with self._lock:
             info = self.load()
             frame = load_image_frame(path, info.width, info.height, fit_mode=fit_mode)
@@ -81,20 +81,20 @@ class DMDController:
             self._settle()
 
     def send_rgb_frame(self, rgb_bytes: bytes) -> bool:
-        self.stop_image(clear=False)
+        self.stop(clear=False)
         with self._lock:
             self.load()
             return self._send_rgb_frame(rgb_bytes)
 
     def clear(self) -> None:
-        self.stop_image(clear=False)
+        self.stop(clear=False)
         with self._lock:
             info = self.load()
             self._connection.clear(info.width, info.height)
             self._previous_frame = bytes(info.width * info.height * 3)
             self._settle()
 
-    def stop_image(self, *, clear: bool = False) -> None:
+    def stop(self, *, clear: bool = False) -> None:
         thread = None
         with self._lock:
             self._stop_event.set()
@@ -105,11 +105,13 @@ class DMDController:
         self._stop_event.clear()
         if clear:
             with self._lock:
-                self._client.clear()
-                self._client.settle()
+                info = self.load()
+                self._connection.clear(info.width, info.height)
+                self._previous_frame = bytes(info.width * info.height * 3)
+                self._settle()
 
     def play_video(self, path: str, *, loop: bool = True, fit_mode: str = "stretch") -> None:
-        self.stop_image(clear=False)
+        self.stop(clear=False)
         self.load()
         with self._lock:
             self._stop_event.clear()

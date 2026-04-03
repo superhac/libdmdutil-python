@@ -67,7 +67,7 @@ def main() -> int:
                 time.sleep(2.0)
             else:
                 time.sleep(max(args.pattern_seconds, 3.0))
-            dmd.stop_image(clear=False)
+            dmd.stop(clear=False)
             print(f"Played animation: {args.gif}")
             return 0
 

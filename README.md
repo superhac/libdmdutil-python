@@ -28,7 +28,7 @@ The main methods are:
 - `load()`
 - `unload()`
 - `hold_image(path)`
-- `stop_image(clear=False)`
+- `stop(clear=False)`
 - `play_video(path, loop=True)`
 - `clear()`
 - `info()`
@@ -132,7 +132,7 @@ time.sleep(3)
 dmd.play_video("attract.gif", loop=True, fit_mode="contain")
 time.sleep(10)
 
-dmd.stop_image(clear=True)
+dmd.stop(clear=True)
 dmd.unload()
 ```
 
