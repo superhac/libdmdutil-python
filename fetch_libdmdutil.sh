@@ -3,6 +3,11 @@ set -euo pipefail
 
 DEST="${1:-${LIBDMDUTIL_SRC:-libdmdutil}}"
 API_URL="${LIBDMDUTIL_RELEASE_API:-https://api.github.com/repos/vpinball/libdmdutil/releases/latest}"
+AUTH_ARGS=()
+
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  AUTH_ARGS=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+fi
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -18,7 +23,7 @@ require_cmd mktemp
 echo "=== Fetching latest libdmdutil release ==="
 echo "  destination: ${DEST}"
 
-json="$(curl -fsSL -H 'Accept: application/vnd.github+json' -H 'User-Agent: libdmdutil-python-fetch' "${API_URL}")"
+json="$(curl -fsSL "${AUTH_ARGS[@]}" -H 'Accept: application/vnd.github+json' -H 'User-Agent: libdmdutil-python-fetch' "${API_URL}")"
 tag="$(printf '%s' "${json}" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)"
 
 if [[ -z "${tag}" ]]; then
@@ -33,7 +38,7 @@ trap 'rm -rf "${tmpdir}"' EXIT
 echo "  release tag : ${tag}"
 echo "  tarball     : ${tarball_url}"
 
-curl -fsSL -o "${tmpdir}/libdmdutil.tar.gz" "${tarball_url}"
+curl -fsSL "${AUTH_ARGS[@]}" -H 'User-Agent: libdmdutil-python-fetch' -o "${tmpdir}/libdmdutil.tar.gz" "${tarball_url}"
 tar -xzf "${tmpdir}/libdmdutil.tar.gz" -C "${tmpdir}"
 
 srcdir="$(find "${tmpdir}" -mindepth 1 -maxdepth 1 -type d | head -n1)"

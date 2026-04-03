@@ -26,11 +26,6 @@ jobs:
             platform: linux
             arch: aarch64
             wrapper_lib: libdmdutil_python_bridge.so
-          - name: macOS x64
-            os: macos-13
-            platform: macos
-            arch: x64
-            wrapper_lib: libdmdutil_python_bridge.dylib
           - name: macOS arm64
             os: macos-latest
             platform: macos
@@ -72,6 +67,8 @@ jobs:
       - name: Fetch latest libdmdutil release
         shell: bash
         run: ./fetch_libdmdutil.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build libdmdutil
         shell: bash
