@@ -118,16 +118,82 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}
-          path: artifact
+          path: artifact/libdmdutil-python
 
-      - name: Publish release asset (Linux / macOS)
-        if: startsWith(github.ref, 'refs/tags/v') && runner.os != 'Windows'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
-      - name: Publish release asset (Windows)
-        if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'Windows'
-        uses: softprops/action-gh-release@v2
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          files: dist/libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          path: artifacts
+
+      - name: Create release archives
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          for dir in artifacts/libdmdutil-python-*/; do
+            base="$(basename "${dir%/}")"
+            triplet="${base#libdmdutil-python-}"
+            if [[ "${triplet}" == win-* ]]; then
+              (
+                cd "${dir}"
+                zip -r "../../libdmdutil-python-${TAG}-${triplet}.zip" libdmdutil-python
+              )
+            else
+              (
+                cd "${dir}"
+                tar -czf "../../libdmdutil-python-${TAG}-${triplet}.tar.gz" libdmdutil-python
+              )
+            fi
+          done
+
+      - name: Generate checksums
+        run: |
+          sha256sum libdmdutil-python-${GITHUB_REF_NAME}-* > checksums.txt
+
+      - name: Generate manifest
+        run: |
+          python3 - <<'PY'
+          import glob
+          import hashlib
+          import json
+          import os
+          import re
+
+          tag = os.environ["GITHUB_REF_NAME"]
+          manifest = {
+              "version": tag,
+              "assets": {}
+          }
+
+          pattern = re.compile(rf"^libdmdutil-python-{re.escape(tag)}-(.+)\.(zip|tar\.gz)$")
+          for path in sorted(glob.glob(f"libdmdutil-python-{tag}-*")):
+              name = os.path.basename(path)
+              m = pattern.match(name)
+              if not m:
+                  continue
+              triplet = m.group(1)
+              with open(path, "rb") as f:
+                  digest = hashlib.sha256(f.read()).hexdigest()
+              manifest["assets"][triplet] = {
+                  "file": name,
+                  "sha256": digest
+              }
+
+          with open("manifest.json", "w", encoding="utf-8") as f:
+              json.dump(manifest, f, indent=2, sort_keys=True)
+              f.write("\n")
+          PY
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            libdmdutil-python-${{ github.ref_name }}-*
+            checksums.txt
+            manifest.json
+          generate_release_notes: true
