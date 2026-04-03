@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: |
           cd dist
-          powershell -Command "Compress-Archive -Path libdmdutil-python -DestinationPath libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.zip"
+          powershell -Command "Compress-Archive -Path .\\libdmdutil-python -DestinationPath libdmdutil-python-${{ matrix.platform }}-${{ matrix.arch }}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
