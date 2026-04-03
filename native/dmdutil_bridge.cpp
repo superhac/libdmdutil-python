@@ -19,56 +19,88 @@ struct vpindmd_dmdutil_context {
 namespace {
 
 template <typename T>
-concept HasSetSerumPUPTriggers = requires(T* config, bool value) { config->SetSerumPUPTriggers(value); };
+void maybe_set_serum_pup_triggers(T*, bool) {}
+template <typename T>
+requires requires(T* config, bool value) { config->SetSerumPUPTriggers(value); }
+void maybe_set_serum_pup_triggers(T* config, bool value) {
+  config->SetSerumPUPTriggers(value);
+}
 
 template <typename T>
-concept HasSetVniKey = requires(T* config, const char* value) { config->SetVniKey(value); };
+void maybe_set_vni_key(T*, const char*) {}
+template <typename T>
+requires requires(T* config, const char* value) { config->SetVniKey(value); }
+void maybe_set_vni_key(T* config, const char* value) {
+  config->SetVniKey(value);
+}
 
 template <typename T>
-concept HasSetExcludeColorizedFramesForZeDMD =
-    requires(T* config, bool value) { config->SetExcludeColorizedFramesForZeDMD(value); };
+void maybe_set_exclude_zedmd(T*, bool) {}
+template <typename T>
+requires requires(T* config, bool value) { config->SetExcludeColorizedFramesForZeDMD(value); }
+void maybe_set_exclude_zedmd(T* config, bool value) {
+  config->SetExcludeColorizedFramesForZeDMD(value);
+}
 
 template <typename T>
-concept HasSetExcludeColorizedFramesForRGB24DMD =
-    requires(T* config, bool value) { config->SetExcludeColorizedFramesForRGB24DMD(value); };
+void maybe_set_exclude_rgb24(T*, bool) {}
+template <typename T>
+requires requires(T* config, bool value) { config->SetExcludeColorizedFramesForRGB24DMD(value); }
+void maybe_set_exclude_rgb24(T* config, bool value) {
+  config->SetExcludeColorizedFramesForRGB24DMD(value);
+}
 
 template <typename T>
-concept HasSetExcludeColorizedFramesForPIN2DMD =
-    requires(T* config, bool value) { config->SetExcludeColorizedFramesForPIN2DMD(value); };
+void maybe_set_exclude_pin2dmd(T*, bool) {}
+template <typename T>
+requires requires(T* config, bool value) { config->SetExcludeColorizedFramesForPIN2DMD(value); }
+void maybe_set_exclude_pin2dmd(T* config, bool value) {
+  config->SetExcludeColorizedFramesForPIN2DMD(value);
+}
 
 template <typename T>
-concept HasSetExcludeColorizedFramesForPixelcade =
-    requires(T* config, bool value) { config->SetExcludeColorizedFramesForPixelcade(value); };
+void maybe_set_exclude_pixelcade(T*, bool) {}
+template <typename T>
+requires requires(T* config, bool value) { config->SetExcludeColorizedFramesForPixelcade(value); }
+void maybe_set_exclude_pixelcade(T* config, bool value) {
+  config->SetExcludeColorizedFramesForPixelcade(value);
+}
 
 template <typename T>
-concept HasSetDumpZip = requires(T* config, bool value) { config->SetDumpZip(value); };
+void maybe_set_dump_zip(T*, bool) {}
+template <typename T>
+requires requires(T* config, bool value) { config->SetDumpZip(value); }
+void maybe_set_dump_zip(T* config, bool value) {
+  config->SetDumpZip(value);
+}
 
 template <typename T>
-concept HasSetPIN2DMD = requires(T* config, bool value) { config->SetPIN2DMD(value); };
+void maybe_set_pin2dmd(T*, bool) {}
+template <typename T>
+requires requires(T* config, bool value) { config->SetPIN2DMD(value); }
+void maybe_set_pin2dmd(T* config, bool value) {
+  config->SetPIN2DMD(value);
+}
 
 void reset_config(DMDUtil::Config* config) {
   config->SetAltColor(false);
   config->SetAltColorPath("");
   config->SetPUPCapture(false);
-  if constexpr (HasSetSerumPUPTriggers<DMDUtil::Config>) config->SetSerumPUPTriggers(false);
-  if constexpr (HasSetVniKey<DMDUtil::Config>) config->SetVniKey("");
+  maybe_set_serum_pup_triggers(config, false);
+  maybe_set_vni_key(config, "");
   config->SetPUPVideosPath("");
   config->SetPUPExactColorMatch(false);
   config->SetIgnoreUnknownFramesTimeout(0);
   config->SetMaximumUnknownFramesToSkip(0);
   config->SetShowNotColorizedFrames(false);
-  if constexpr (HasSetExcludeColorizedFramesForZeDMD<DMDUtil::Config>)
-    config->SetExcludeColorizedFramesForZeDMD(false);
-  if constexpr (HasSetExcludeColorizedFramesForRGB24DMD<DMDUtil::Config>)
-    config->SetExcludeColorizedFramesForRGB24DMD(false);
-  if constexpr (HasSetExcludeColorizedFramesForPIN2DMD<DMDUtil::Config>)
-    config->SetExcludeColorizedFramesForPIN2DMD(false);
-  if constexpr (HasSetExcludeColorizedFramesForPixelcade<DMDUtil::Config>)
-    config->SetExcludeColorizedFramesForPixelcade(false);
+  maybe_set_exclude_zedmd(config, false);
+  maybe_set_exclude_rgb24(config, false);
+  maybe_set_exclude_pin2dmd(config, false);
+  maybe_set_exclude_pixelcade(config, false);
   config->SetDumpNotColorizedFrames(false);
   config->SetDumpFrames(false);
   config->SetDumpPath("");
-  if constexpr (HasSetDumpZip<DMDUtil::Config>) config->SetDumpZip(false);
+  maybe_set_dump_zip(config, false);
   config->SetFilterTransitionalFrames(false);
 
   config->SetZeDMD(false);
@@ -85,7 +117,7 @@ void reset_config(DMDUtil::Config* config) {
 
   config->SetPixelcade(false);
   config->SetPixelcadeDevice("");
-  if constexpr (HasSetPIN2DMD<DMDUtil::Config>) config->SetPIN2DMD(false);
+  maybe_set_pin2dmd(config, false);
 
   config->SetDMDServer(false);
   config->SetDMDServerAddr("localhost");
@@ -108,7 +140,7 @@ void apply_options(DMDUtil::Config* config, const vpindmd_dmdutil_options* optio
   config->SetZeDMDWiFiAddr(options->zedmd_wifi_addr ? options->zedmd_wifi_addr : "");
   config->SetPixelcade(options->enable_pixelcade != 0);
   config->SetPixelcadeDevice(options->pixelcade_device ? options->pixelcade_device : "");
-  if constexpr (HasSetPIN2DMD<DMDUtil::Config>) config->SetPIN2DMD(options->enable_pin2dmd != 0);
+  maybe_set_pin2dmd(config, options->enable_pin2dmd != 0);
   config->SetZeDMDBrightness(options->zedmd_brightness);
   config->SetZeDMDDebug(options->verbose != 0);
   config->SetLogLevel(options->verbose ? DMDUtil_LogLevel_DEBUG : DMDUtil_LogLevel_INFO);
