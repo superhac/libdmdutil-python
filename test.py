@@ -62,12 +62,8 @@ def main() -> int:
             return 0
 
         if args.gif:
-            dmd.play_video(args.gif, loop=args.loops != 1, fit_mode=args.fit_mode)
-            if args.loops <= 1:
-                time.sleep(2.0)
-            else:
-                time.sleep(max(args.pattern_seconds, 3.0))
-            dmd.stop(clear=False)
+            dmd.play_video(args.gif, loops=args.loops, fit_mode=args.fit_mode)
+            dmd.wait()
             print(f"Played animation: {args.gif}")
             return 0
 

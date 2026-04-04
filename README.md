@@ -29,7 +29,7 @@ The main methods are:
 - `unload()`
 - `hold_image(path)`
 - `stop(clear=False)`
-- `play_video(path, loop=True)`
+- `play_video(path, loop=True)` or `play_video(path, loops=N)`
 - `clear()`
 - `info()`
 
@@ -191,4 +191,5 @@ python3 test.py --device /dev/ttyACM0 --image dmd.png
 python3 test.py --host 192.168.6.219 --gif attract.gif
 python3 test.py --pixelcade-device /dev/ttyUSB0 --image dmd.png
 python3 test.py --pin2dmd --gif attract.gif
+python3 test.py --device /dev/ttyACM0 --gif popeye.gif --loops 3
 ```

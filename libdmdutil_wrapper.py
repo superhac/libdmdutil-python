@@ -110,19 +110,40 @@ class DMDController:
                 self._previous_frame = bytes(info.width * info.height * 3)
                 self._settle()
 
-    def play_video(self, path: str, *, loop: bool = True, fit_mode: str = "stretch") -> None:
+    def play_video(
+        self,
+        path: str,
+        *,
+        loop: bool | None = None,
+        loops: int | None = None,
+        fit_mode: str = "stretch",
+    ) -> None:
         self.stop(clear=False)
         self.load()
+        if loops is not None and loops < 1:
+            raise ValueError("loops must be >= 1")
+        if loops is None:
+            loops = 0 if (loop is True) else 1
         with self._lock:
             self._stop_event.clear()
             self._playback_thread = threading.Thread(
                 target=self._playback_worker,
-                args=(path, loop, fit_mode),
+                args=(path, loops, fit_mode),
                 daemon=True,
             )
             self._playback_thread.start()
 
-    def _playback_worker(self, path: str, loop: bool, fit_mode: str) -> None:
+    def wait(self, timeout: float | None = None) -> None:
+        with self._lock:
+            thread = self._playback_thread
+        if thread is None or not thread.is_alive():
+            return
+        if threading.current_thread() is thread:
+            return
+        thread.join(timeout=timeout)
+
+    def _playback_worker(self, path: str, loops: int, fit_mode: str) -> None:
+        completed_loops = 0
         while not self._stop_event.is_set():
             info = self.info()
             for frame in iter_gif_frames(path, info.width, info.height, fit_mode=fit_mode):
@@ -135,7 +156,8 @@ class DMDController:
                 remaining = max(frame.duration_ms - elapsed_ms, 0.0) / 1000.0
                 if self._stop_event.wait(remaining):
                     return
-            if not loop:
+            completed_loops += 1
+            if loops != 0 and completed_loops >= loops:
                 return
 
     def _send_rgb_frame(self, rgb_bytes: bytes) -> bool:
