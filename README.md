@@ -146,6 +146,26 @@ dmd.load()
 dmd.hold_image("logo.png")
 ```
 
+For Pixelcade:
+
+```python
+from libdmdutil_wrapper import DMDController
+
+dmd = DMDController(pixelcade_device="/dev/ttyUSB0")
+dmd.load()
+dmd.hold_image("logo.png")
+```
+
+For PIN2DMD:
+
+```python
+from libdmdutil_wrapper import DMDController
+
+dmd = DMDController(pin2dmd=True)
+dmd.load()
+dmd.play_video("attract.gif", loop=True)
+```
+
 ## Notes
 
 - `play_video()` currently uses Pillow frame iteration, so the supported animated formats are whatever Pillow can read well. GIF is the primary target right now.
@@ -169,4 +189,6 @@ Example usage:
 python3 test.py --device /dev/ttyACM0
 python3 test.py --device /dev/ttyACM0 --image dmd.png
 python3 test.py --host 192.168.6.219 --gif attract.gif
+python3 test.py --pixelcade-device /dev/ttyUSB0 --image dmd.png
+python3 test.py --pin2dmd --gif attract.gif
 ```
