@@ -35,7 +35,7 @@ jobs:
             arch: arm64
             wrapper_lib: libdmdutil_python_bridge.dylib
           - name: Windows x64
-            os: windows-latest
+            os: windows-2022
             platform: win
             arch: x64
             wrapper_lib: libdmdutil_python_bridge.dll
